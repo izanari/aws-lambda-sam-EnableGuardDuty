@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    - Enable GuardDuty
+    - Notify Hangout of guardduty results
+
+Globals:
+    Function:
+        Timeout: 3
+
+Parameters:
+    HOST:
+        Type: String
+        Default: 'chat.googleapis.com'
+    URL:
+        Type: String 
+        AllowedPattern: ^/(.*)$
+
+Resources:
+    GuardDutySendNotice:
+        Type: AWS::Serverless::Function 
+        Properties:
+            CodeUri: src/
+            Handler: lambda_function.lambda_handler
+            Runtime: python3.7
+            Environment: 
+                Variables:
+                    HOST: !Ref HOST
+                    URL: !Ref URL
+            Events:
+                NoticeEvent:
+                    Type: CloudWatchEvent
+                    Properties:
+                        Pattern: 
+                            source:
+                                - "aws.guardduty"
+
+    GuardDutyDetector:
+        Type: "AWS::GuardDuty::Detector"
+        Properties:
+            FindingPublishingFrequency: SIX_HOURS
+            Enable: True 
+
